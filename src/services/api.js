@@ -82,6 +82,12 @@ export const adminAPI = {
   
   getUsers: (role) =>
     request(`/admin/users${role ? `?role=${role}` : ''}`),
+  
+  createTaskTemplates: () =>
+    request('/admin/task-templates', { method: 'POST' }),
+  
+  getTaskTemplates: () =>
+    request('/admin/task-templates'),
 };
 
 // Owner APIs
@@ -114,6 +120,8 @@ export const ownerAPI = {
       body: JSON.stringify(taskData),
     }),
   
+  getTaskTemplates: () => request('/owner/task-templates'),
+  
   getTasks: (active = true) =>
     request(`/owner/tasks?active=${active}`),
   
@@ -127,6 +135,12 @@ export const ownerAPI = {
   
   deleteTask: (id) =>
     request(`/owner/tasks/${id}`, { method: 'DELETE' }),
+  
+  reorderTasks: (tasks) =>
+    request('/owner/tasks/reorder', {
+      method: 'POST',
+      body: JSON.stringify({ tasks }),
+    }),
   
   // Task Entry APIs
   getTaskEntries: (patientId) =>
@@ -167,4 +181,37 @@ export const nurseAPI = {
     
     return request(`/nurse/my-tasks?${params}`);
   },
+};
+
+// Query APIs (Owner/Nurse/Admin)
+export const queryAPI = {
+  // Owner/Nurse create query
+  create: (payload) =>
+    request('/queries', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  // Owner/Nurse list own queries
+  myQueries: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    return request(`/queries/mine?${params}`);
+  },
+
+  // Admin list queries
+  adminList: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.userId) params.append('userId', filters.userId);
+    return request(`/queries/admin?${params}`);
+  },
+
+  // Admin update status
+  adminUpdateStatus: (id, status) =>
+    request(`/queries/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 };

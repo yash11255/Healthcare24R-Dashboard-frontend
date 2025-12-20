@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Users, Building2, Stethoscope, ClipboardList, HandHeart, RefreshCw, Activity, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Users, Building2, Stethoscope, ClipboardList, HandHeart, RefreshCw, Activity, CheckCircle2, AlertTriangle, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
-import { adminAPI } from '../services/api';
+import { adminAPI, queryAPI } from '../services/api';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -15,6 +15,11 @@ export default function AdminDashboard() {
   const [assignments, setAssignments] = useState([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
   const [assignmentsError, setAssignmentsError] = useState('');
+
+  const [queries, setQueries] = useState([]);
+  const [queriesLoading, setQueriesLoading] = useState(false);
+  const [queriesError, setQueriesError] = useState('');
+  const [queryFilters, setQueryFilters] = useState({ status: '', category: '' });
 
   const fetchUsers = async (role = '') => {
     setUsersLoading(true);
@@ -61,51 +66,72 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchUsers(usersRoleFilter);
     fetchAssignments();
+    fetchQueries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const fetchQueries = async () => {
+    setQueriesLoading(true);
+    setQueriesError('');
+    try {
+      const data = await queryAPI.adminList(queryFilters);
+      const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+      setQueries(list);
+    } catch (err) {
+      setQueriesError(err.message || 'Failed to load queries');
+      setQueries([]);
+    } finally {
+      setQueriesLoading(false);
+    }
+  };
+
   return (
     <DashboardLayout title="Admin Dashboard" onLogout={logout}>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Welcome Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-          <div className="flex items-center gap-3 mb-2">
-            <HandHeart className="w-6 h-6 text-blue-600" aria-hidden />
-            <h2 className="text-2xl font-bold text-gray-900">Welcome, {user?.name}!</h2>
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 border border-gray-200">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <HandHeart className="w-5 sm:w-6 h-5 sm:h-6 text-blue-600 shrink-0" aria-hidden />
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome, {user?.name}!</h2>
           </div>
-          <p className="text-gray-600">Manage users, owners, nurses, and assignments</p>
+          <p className="text-sm sm:text-base text-gray-600">Manage users, owners, nurses, and assignments</p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 border-b border-gray-200">
-          {['users', 'create-owner', 'create-nurse', 'assignments'].map((tab) => (
+        <div className="flex gap-1 sm:gap-2 border-b border-gray-200 overflow-x-auto">
+          {['users', 'create-owner', 'create-nurse', 'assignments', 'queries'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 font-medium transition-colors ${
+              className={`px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               {tab === 'users' && (
-                <span className="inline-flex items-center gap-2">
-                  <Users className="w-4 h-4" aria-hidden /> Users
+                <span className="inline-flex items-center gap-1 sm:gap-2">
+                  <Users className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Users</span>
                 </span>
               )}
               {tab === 'create-owner' && (
-                <span className="inline-flex items-center gap-2">
-                  <Building2 className="w-4 h-4" aria-hidden /> Create Owner
+                <span className="inline-flex items-center gap-1 sm:gap-2">
+                  <Building2 className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Owner</span>
                 </span>
               )}
               {tab === 'create-nurse' && (
-                <span className="inline-flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4" aria-hidden /> Create Nurse
+                <span className="inline-flex items-center gap-1 sm:gap-2">
+                  <Stethoscope className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Nurse</span>
                 </span>
               )}
               {tab === 'assignments' && (
-                <span className="inline-flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4" aria-hidden /> Assignments
+                <span className="inline-flex items-center gap-1 sm:gap-2">
+                  <ClipboardList className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Assign</span>
+                </span>
+              )}
+              {tab === 'queries' && (
+                <span className="inline-flex items-center gap-1 sm:gap-2">
+                  <MessageSquare className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Queries</span>
                 </span>
               )}
             </button>
@@ -113,7 +139,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 border border-gray-200">
           {activeTab === 'users' && (
             <UsersSection
               users={users}
@@ -150,9 +176,122 @@ export default function AdminDashboard() {
               onAssignSuccess={fetchAssignments}
             />
           )}
+          {activeTab === 'queries' && (
+            <QueriesAdminSection
+              queries={queries}
+              loading={queriesLoading}
+              error={queriesError}
+              filters={queryFilters}
+              onFiltersChange={(f) => {
+                setQueryFilters(f);
+                fetchQueries();
+              }}
+              onRefresh={fetchQueries}
+              onUpdateStatus={async (id, status) => {
+                await queryAPI.adminUpdateStatus(id, status);
+                fetchQueries();
+              }}
+            />
+          )}
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+function QueriesAdminSection({ queries, loading, error, filters, onFiltersChange, onRefresh, onUpdateStatus }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">All Queries</h3>
+          <p className="text-xs sm:text-sm text-gray-600">Filter, review, and update statuses</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <select
+            value={filters.status}
+            onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })}
+            className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+          >
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="priority">Priority</option>
+            <option value="resolved">Resolved</option>
+          </select>
+          <select
+            value={filters.category}
+            onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}
+            className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+          >
+            <option value="">All categories</option>
+            <option value="owner">Owner</option>
+            <option value="nurse">Nurse</option>
+          </select>
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm hover:bg-gray-50"
+          >
+            <RefreshCw className="w-4 h-4" aria-hidden /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+      )}
+
+      {loading ? (
+        <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-500">Loading queries...</div>
+      ) : queries.length === 0 ? (
+        <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-500">No queries found.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full border divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Title</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">From</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Category</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Status</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {queries.map((q) => (
+                <tr key={q._id || q.id}>
+                  <td className="px-4 py-2 text-sm text-gray-900">
+                    <div className="font-medium">{q.title}</div>
+                    <div className="text-gray-600 mt-1 text-xs whitespace-pre-wrap">{q.message}</div>
+                    {q.patientId?.name && (
+                      <div className="text-xs text-gray-500 mt-1">Patient: {q.patientId.name}</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-sm text-gray-700">
+                    {q.createdBy?.name} <span className="text-gray-500">({q.createdBy?.role})</span>
+                  </td>
+                  <td className="px-4 py-2 text-sm text-gray-700 capitalize">{q.category}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700 capitalize">{q.status}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={q.status}
+                        onChange={(e) => onUpdateStatus(q._id || q.id, e.target.value)}
+                        className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="priority">Priority</option>
+                        <option value="resolved">Resolved</option>
+                      </select>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
 

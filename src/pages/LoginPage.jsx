@@ -43,7 +43,7 @@ export default function LoginPage() {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-blue-600 to-indigo-600 rounded-full mb-4 text-white">
-            <Hospital className="w-8 h-8" aria-hidden />
+            <Hospital className="w-8 h-8 shrink-0" aria-hidden />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Healthcare24R</h1>
           <p className="text-gray-600">Dashboard Login</p>
@@ -97,7 +97,7 @@ export default function LoginPage() {
                   disabled={loading}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" aria-hidden /> : <Eye className="w-5 h-5" aria-hidden />}
+                  {showPassword ? <EyeOff className="w-5 h-5 shrink-0" aria-hidden /> : <Eye className="w-5 h-5 shrink-0" aria-hidden />}
                 </button>
               </div>
             </div>
