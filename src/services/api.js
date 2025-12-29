@@ -88,6 +88,31 @@ export const adminAPI = {
   
   getTaskTemplates: () =>
     request('/admin/task-templates'),
+
+  // Owner Task Management
+  createOwnerTask: (ownerId, taskData) =>
+    request(`/admin/owners/${ownerId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify(taskData),
+    }),
+  
+  getOwnerTasks: (ownerId, active = true) =>
+    request(`/admin/owners/${ownerId}/tasks?active=${active}`),
+  
+  updateOwnerTask: (id, updates) =>
+    request(`/admin/owner-tasks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    }),
+  
+  deleteOwnerTask: (id) =>
+    request(`/admin/owner-tasks/${id}`, { method: 'DELETE' }),
+  
+  reorderOwnerTasks: (ownerId, tasks) =>
+    request(`/admin/owners/${ownerId}/tasks/reorder`, {
+      method: 'POST',
+      body: JSON.stringify({ tasks }),
+    }),
 };
 
 // Owner APIs
@@ -113,34 +138,13 @@ export const ownerAPI = {
   deletePatient: (id) =>
     request(`/owner/patients/${id}`, { method: 'DELETE' }),
   
-  // Task APIs
-  createTask: (taskData) =>
-    request('/owner/tasks', {
-      method: 'POST',
-      body: JSON.stringify(taskData),
-    }),
-  
+  // Task APIs (READ-ONLY - tasks are managed by admin)
   getTaskTemplates: () => request('/owner/task-templates'),
   
   getTasks: (active = true) =>
     request(`/owner/tasks?active=${active}`),
   
   getTask: (id) => request(`/owner/tasks/${id}`),
-  
-  updateTask: (id, updates) =>
-    request(`/owner/tasks/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updates),
-    }),
-  
-  deleteTask: (id) =>
-    request(`/owner/tasks/${id}`, { method: 'DELETE' }),
-  
-  reorderTasks: (tasks) =>
-    request('/owner/tasks/reorder', {
-      method: 'POST',
-      body: JSON.stringify({ tasks }),
-    }),
   
   // Task Entry APIs
   getTaskEntries: (patientId) =>
@@ -214,4 +218,7 @@ export const queryAPI = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
+
+  // Owner/Nurse delete own query
+  delete: (id) => request(`/queries/${id}`, { method: 'DELETE' }),
 };
